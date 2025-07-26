@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <link rel="shortcut icon" href="../assets/images/logo_3.png" type="image/x-icon">
+  <title>ConcertTix Admin Dashboard</title>
+
+  <!-- Bootstrap CSS & Icons -->
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"></noscript>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- GSAP for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup sidebar navigation clicks
+        setupSidebarNavigation();
+        
+        // Setup scroll spy to highlight active section
+        setupScrollSpy();
+    });
+
+    // Function to setup scroll spy
+    function setupScrollSpy() {
+      const sections = [
+        { id: 'all-section', navText: 'All Concerts' }
+      ];
+      
+      const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+      
+      function checkActiveSection() {
+        let currentSection = null;
+        const scrollPosition = window.scrollY + 100;
+        const headerHeight = document.querySelector('.admin-header').offsetHeight;
+        
+        // Check if at top of page
+        if (scrollPosition < headerHeight) {
+          currentSection = 'Dashboard';
+        } else {
+          // Check other sections
+          for (const section of sections) {
+            const element = document.getElementById(section.id);
+            if (element) {
+              const offsetTop = element.offsetTop - headerHeight;
+              const offsetHeight = element.offsetHeight;
+              
+              if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+                currentSection = section.navText;
+                break;
+              }
+            }
+          }
+        }
+        
+        // Update active nav item
+        navItems.forEach(item => {
+          const itemText = item.querySelector('.nav-item-text').textContent.trim();
+          if (itemText === currentSection) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+      
+      // Initial check
+      checkActiveSection();
+      
+      // Check on scroll
+      window.addEventListener('scroll', checkActiveSection);
+    }
+
+    // Function to setup sidebar navigation clicks
+    function setupSidebarNavigation() {
+        // Get all nav items
+        const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+        
+        // Add click event to each nav item
+        navItems.forEach(item => {
+            item.addEventListener('click', function() {
+                // Get the text content of the clicked item
+                const sectionName = this.querySelector('.nav-item-text').textContent.trim();
+                
+                // Map the section names to their corresponding IDs
+                const sectionMap = {
+                    'Dashboard': null,
+                    'All Concerts': 'all-section'
+                };
+                
+                // Get the section ID
+                const sectionId = sectionMap[sectionName];
+                
+                if (sectionId) {
+                    // Get the section element
+                    const section = document.getElementById(sectionId);
+                    
+                    if (section) {
+                        // Scroll to the section with smooth behavior
+                        section.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                        
+                        // Add a slight highlight effect
+                        section.style.transition = 'box-shadow 0.3s';
+                        section.style.boxShadow = '0 0 0 4px rgba(138, 79, 255, 0.3)';
+                        
+                        // Remove the highlight after 1 second
+                        setTimeout(() => {
+                            section.style.boxShadow = 'none';
+                        }, 1000);
+                    }
+                } else if (sectionName === 'Dashboard') {
+                    // Scroll to top for Dashboard
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+                
+                // Set active nav item
+                navItems.forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Close mobile sidebar if open
+                if (document.body.classList.contains('sidebar-show')) {
+                    document.body.classList.remove('sidebar-show');
+                }
+            });
+        });
+    }
+  </script>
+
+  <style>
+    /* Tambahkan style untuk map container */
+    #concertMap {
+      height: 300px;
+      width: 100%;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+    
+    /* Style untuk modal yang lebih lebar */
+    .concert-modal-lg {
+      max-width: 800px;
+    }
+
+    /* VARIABLES */
+    :root {
+      --primary-purple: #8a4fff;
+      --primary-orange: #ff6600;
+      --gradient-purple: linear-gradient(135deg, #8a4fff 0%, #5e2de0 100%);
+      --sidebar-width: 280px;
+      --header-height: 70px;
+    }
+    
+    /* BASE STYLES */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f7fa;
+      overflow-x: hidden;
+    }
+    
+    /* Admin Layout */
+    .admin-container {
+      display: flex;
+      min-height: 100vh;
+    }
+    
+    /* Sidebar Styles */
+    .admin-sidebar {
+      width: var(--sidebar-width);
+      background: linear-gradient(180deg, #2a3042 0%, #1e2233 100%);
+      color: #a6b0cf;
+      position: fixed;
+      height: 100vh;
+      z-index: 1000;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sidebar-collapsed .admin-sidebar {
+      width: 80px;
+    }
+    
+    .sidebar-collapsed .admin-main {
+      margin-left: 80px;
+    }
+    
+    .sidebar-collapsed .sidebar-brand span,
+    .sidebar-collapsed .nav-item-text {
+      display: none;
+    }
+    
+    .sidebar-collapsed .nav-item {
+      justify-content: center;
+    }
+    
+    .sidebar-collapsed .sidebar-footer {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .sidebar-collapsed .sidebar-footer-text {
+      display: none;
+    }
+    
+    .sidebar-brand {
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-brand span {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-left: 10px;
+      color: white;
+    }
+    
+    .sidebar-brand-icon {
+      font-size: 1.8rem;
+      color: var(--primary-orange);
+    }
+    
+    .sidebar-nav {
+      padding: 20px 0;
+      height: calc(100vh - var(--header-height) - 70px);
+      overflow-y: auto;
+    }
+    
+    .sidebar-nav::-webkit-scrollbar {
+      width: 5px;
+    }
+    
+    .sidebar-nav::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+    
+    .nav-item {
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-left: 3px solid transparent;
+    }
+    
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+    
+    .nav-item.active {
+      background: rgba(138, 79, 255, 0.1);
+      border-left: 3px solid var(--primary-purple);
+      color: white;
+    }
+    
+    .nav-item.active .nav-icon {
+      color: var(--primary-purple);
+    }
+    
+    .nav-icon {
+      font-size: 1.2rem;
+      margin-right: 10px;
+      color: #a6b0cf;
+      transition: all 0.3s ease;
+    }
+    
+    .nav-item-text {
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .sidebar-footer {
+      height: 70px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary-purple);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    
+    .user-name {
+      color: white;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    
+    .user-role {
+      color: #a6b0cf;
+      font-size: 0.8rem;
+    }
+    
+    /* Main Content Styles */
+    .admin-main {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      transition: all 0.3s ease;
+    }
+    
+    .admin-header {
+      height: var(--header-height);
+      background-color: white;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 25px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+    
+    .sidebar-toggle {
+      font-size: 1.5rem;
+      color: #6c757d;
+      cursor: pointer;
+      margin-right: 20px;
+      transition: all 0.3s ease;
+    }
+    
+    .sidebar-toggle:hover {
+      color: var(--primary-purple);
+    }
+    
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #2a3042;
+      margin-bottom: 0;
+    }
+    
+    .header-right {
+      display: flex;
+      align-items: center;
+    }
+    
+    .notification-bell {
+      position: relative;
+      margin-right: 20px;
+      color: #6c757d;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .notification-bell:hover {
+      color: var(--primary-purple);
+    }
+    
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      width: 18px;
+      height: 18px;
+      background-color: var(--primary-orange);
+      color: white;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .admin-content {
+      padding: 25px;
+    }
+    
+    /* Card Styles */
+    .admin-card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      margin-bottom: 25px;
+      border: none;
+    }
+    
+    .card-header {
+      background-color: transparent;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2a3042;
+      margin-bottom: 0;
+    }
+    
+    .card-body {
+      padding: 20px;
+    }
+    
+    /* Stats Cards */
+    .stats-card {
+      padding: 20px;
+      border-radius: 10px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    
+    .stats-card::before {
+      content: '';
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 80px;
+      height: 80px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+    }
+    
+    .stats-card .icon {
+      font-size: 2.5rem;
+      opacity: 0.5;
+      margin-bottom: 15px;
+    }
+    
+    .stats-card .value {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .stats-card .label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    
+    .stats-card.purple {
+      background: var(--gradient-purple);
+    }
+    
+    .stats-card.orange {
+      background: linear-gradient(135deg, #ff6600 0%, #ff8c00 100%);
+    }
+    
+    .stats-card.green {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .stats-card.blue {
+      background: linear-gradient(135deg, #007bff 0%, #17a2b8 100%);
+    }
+    
+    /* Buttons */
+    .btn-purple {
+      background-color: var(--primary-purple);
+      color: white;
+      border: none;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-purple:hover {
+      background-color: #7a3fef;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(138, 79, 255, 0.3);
+    }
+    
+    .btn-orange {
+      background-color: var(--primary-orange);
+      color: white;
+      border: none;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-orange:hover {
+      background-color: #e55d00;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(255, 102, 0, 0.3);
+    }
+    
+    .btn-outline-purple {
+      border-color: var(--primary-purple);
+      color: var(--primary-purple);
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline-purple:hover {
+      background-color: var(--primary-purple);
+      color: white;
+    }
+    
+    /* Table Styles */
+    .table-responsive {
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    
+    .table {
+      margin-bottom: 0;
+    }
+    
+    .table thead th {
+      background-color: #f8f9fa;
+      border-bottom-width: 1px;
+      font-weight: 600;
+      color: #495057;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+    }
+    
+    .table tbody tr {
+      transition: all 0.3s ease;
+    }
+    
+    .table tbody tr:hover {
+      background-color: rgba(138, 79, 255, 0.05);
+    }
+    
+    .table .badge {
+      font-weight: 500;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+    }
+    
+    .table .actions {
+      white-space: nowrap;
+    }
+    
+    .table .actions .btn {
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      margin-right: 5px;
+    }
+    
+    /* Form Styles */
+    .form-control, .form-select {
+      border-radius: 8px;
+      padding: 10px 15px;
+      border: 1px solid #e1e5eb;
+      transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-purple);
+      box-shadow: 0 0 0 0.2rem rgba(138, 79, 255, 0.1);
+    }
+    
+    .form-label {
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 8px;
+    }
+    
+    /* Custom file upload */
+    .custom-file-upload {
+      border: 1px dashed #e1e5eb;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background-color: #f8f9fa;
+    }
+    
+    .custom-file-upload:hover {
+      border-color: var(--primary-purple);
+      background-color: rgba(138, 79, 255, 0.05);
+    }
+    
+    .custom-file-upload i {
+      font-size: 2rem;
+      color: var(--primary-purple);
+      margin-bottom: 10px;
+    }
+    
+    .custom-file-upload .file-name {
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+    
+    /* Preview image */
+    .image-preview {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-top: 15px;
+      display: none;
+    }
+    
+    /* Modal Styles */
+    .modal-header {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .modal-footer {
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Chart Container */
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+    
+    /* Responsive Styles */
+    @media (max-width: 992px) {
+      .admin-sidebar {
+        transform: translateX(-100%);
+        z-index: 1050;
+      }
+      
+      .sidebar-show .admin-sidebar {
+        transform: translateX(0);
+      }
+      
+      .admin-main {
+        margin-left: 0;
+      }
+      
+      .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        display: none;
+      }
+      
+      .sidebar-show .sidebar-overlay {
+        display: block;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .admin-header {
+        padding: 0 15px;
+      }
+      
+      .admin-content {
+        padding: 15px;
+      }
+      
+      .stats-card .value {
+        font-size: 1.5rem;
+      }
+    }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    
+    /* Animation classes */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Custom checkbox */
+    .custom-checkbox .form-check-input:checked {
+      background-color: var(--primary-purple);
+      border-color: var(--primary-purple);
+    }
+    
+    /* Status badges */
+    .badge-active {
+      background-color: rgba(40, 167, 69, 0.1);
+      color: #28a745;
+    }
+    
+    .badge-inactive {
+      background-color: rgba(220, 53, 69, 0.1);
+      color: #dc3545;
+    }
+    
+    .badge-pending {
+      background-color: rgba(255, 193, 7, 0.1);
+      color: #ffc107;
+    }
+    
+    /* Custom tabs */
+    .custom-tabs .nav-link {
+      color: #6c757d;
+      border: none;
+      padding: 10px 20px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    
+    .custom-tabs .nav-link.active {
+      color: var(--primary-purple);
+      border-bottom: 2px solid var(--primary-purple);
+      background-color: transparent;
+    }
+    
+    .custom-tabs .nav-link:hover:not(.active) {
+      color: var(--primary-purple);
+    }
+    
+    /* Toast notification */
+    .toast-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1100;
+      min-width: 300px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      display: none;
+    }
+    
+    .toast-header {
+      padding: 12px 15px;
+      border-bottom: none;
+    }
+    
+    .toast-body {
+      padding: 15px;
+    }
+    
+    /* ADMIN SPECIFIC STYLES */
+    .admin-panel {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .admin-panel h3 {
+      color: var(--primary-purple);
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .admin-table th {
+      background: var(--primary-purple);
+      color: white;
+      padding: 12px;
+      text-align: left;
+    }
+
+    .admin-table td {
+      padding: 12px;
+      border-bottom: 1px solid #f0f0f0;
+      vertical-align: middle;
+    }
+
+    .admin-table tr:hover {
+      background: rgba(138, 79, 255, 0.05);
+    }
+
+    .admin-table img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 5px;
+    }
+
+    .admin-action-btn {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.8rem;
+      margin-right: 5px;
+    }
+
+    .btn-edit {
+      background: #ffc107;
+      color: #212529;
+      border: none;
+    }
+
+    .btn-delete {
+      background: #dc3545;
+      color: white;
+      border: none;
+    }
+
+    .btn-view {
+      background: #17a2b8;
+      color: white;
+      border: none;
+    }
+
+    .admin-form {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .admin-form label {
+      font-weight: 600;
+      color: var(--primary-purple);
+      margin-bottom: 5px;
+    }
+
+    .admin-form .form-control {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 15px;
+    }
+
+    .admin-form .form-control:focus {
+      border-color: var(--primary-purple);
+      box-shadow: 0 0 0 0.2rem rgba(138, 79, 255, 0.25);
+    }
+
+    .ticket-price-input {
+      display: grid;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .ticket-price-input label {
+      min-width: 100px;
+      margin-bottom: 10;
+    }
+
+    .ticket-price-input input {
+      flex: 1;
+    }
+
+    .price-badge {
+      background: var(--primary-purple);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-right: 5px;
+      display: inline-grid;
+      margin-bottom: 5px;
+    }
+
+    .ticket-stock-input {
+      display: grid;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .ticket-stock-input label {
+      min-width: 100px;
+      margin-bottom: 10;
+    }
+
+    .ticket-stock-input input {
+      flex: 1;
+    }
+
+    /*Atur layout isi tabel bagian stock*/
+    .stock-badge {
+      background: #6c757d;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      margin-right: 5px;
+      display: inline-grid;
+      margin-bottom: 3px;
+    }
+
+    .preview-image {
+      max-width: 200px;
+      max-height: 200px;
+      margin-top: 10px;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .admin-section-title {
+      color: var(--primary-purple);
+      margin: 30px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .admin-nav-tabs .nav-link {
+      color: #666;
+      font-weight: 500;
+      border: none;
+      padding: 10px 20px;
+      margin-right: 5px;
+    }
+
+    .admin-nav-tabs .nav-link.active {
+      color: var(--primary-purple);
+      background: rgba(138, 79, 255, 0.1);
+      border-bottom: 2px solid var(--primary-purple);
+    }
+
+    .admin-nav-tabs .nav-link:hover:not(.active) {
+      color: var(--primary-purple);
+      background: rgba(138, 79, 255, 0.05);
+    }
+
+    .tab-content {
+      padding: 20px 0;
+    }
+
+    .admin-alert {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1100;
+      min-width: 300px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s ease;
+    }
+
+    .admin-alert.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .form-section {
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px dashed #eee;
+    }
+
+    .form-section-title {
+      font-size: 1.1rem;
+      color: var(--primary-purple);
+      margin-bottom: 15px;
+    }
+
+    .image-upload-container {
+      border: 2px dashed #ddd;
+      border-radius: 5px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 15px;
+    }
+
+    .image-upload-container:hover {
+      border-color: var(--primary-purple);
+      background: rgba(138, 79, 255, 0.05);
+    }
+
+    .image-upload-container i {
+      font-size: 2rem;
+      color: var(--primary-purple);
+      margin-bottom: 10px;
+    }
+
+    .image-upload-container p {
+      margin-bottom: 0;
+      color: #666;
+    }
+
+    #imagePreview {
+      max-width: 100%;
+      max-height: 300px;
+      margin-top: 15px;
+      display: none;
+      border-radius: 5px;
+    }
+
+    /*Aniamasi agar navigasi navbar smooth*/
+    [id^="all-section"] {
+    scroll-margin-top: 30px; /* Adjust this value based on your header height */
+    transition: box-shadow 0.3s ease;
+    }
+
+    /* Active state for sidebar items */
+    .sidebar-nav .nav-item.active {
+    background: rgba(138, 79, 255, 0.1);
+    border-left: 3px solid var(--primary-purple);
+    color: white;
+    }
+
+    .sidebar-nav .nav-item.active .nav-icon {
+    color: var(--primary-purple);
+    }
+        /* Artist fields */
+        .artist-field {
+        background-color: rgba(138, 79, 255, 0.05);
+        border: 1px dashed rgba(138, 79, 255, 0.3) !important;
+    }
+
+    /* Location section */
+    .location-preview {
+        border: 1px solid #eee;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+
+    /* View button */
+    .btn-view {
+        background: #17a2b8;
+        color: white;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-view:hover {
+        background: #138496;
+        transform: translateY(-2px);
+    }
+
+    .artist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .artist-item {
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      background-color: rgba(138, 79, 255, 0.05);
+    }
+
+    .artist-image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin-bottom: 8px;
+    }
+
+    .artist-name {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .facilities-list {
+      margin-top: 10px;
+    }
+
+    /* Leaflet map fixes */
+    .leaflet-container {
+      z-index: 0 !important;
+    }
+
+    .leaflet-control-attribution {
+      font-size: 10px;
+    }
+
+     /* Tambahan style untuk map iframe */
+    .map-iframe {
+      width: 100%;
+      height: 200px;
+      border: 0;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+    
+    /* Perbaikan preview image */
+    .preview-image {
+      max-width: 100%;
+      max-height: 300px;
+      margin-top: 15px;
+      border-radius: 5px;
+      display: block;
+    }
+
+
+          .location-map {
+        width: 100%;
+        height: 300px;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+  </style>
+</head>
+
+<body class="admin-container">
+  <!-- Sidebar Overlay (Mobile) -->
+  <div class="sidebar-overlay"></div>
+  
+  <!-- Admin Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <i class="bi bi-ticket-perforated sidebar-brand-icon"></i>
+      <span>ConcertTix</span>
+    </div>
+    
+    <div class="sidebar-nav">
+      <div class="nav-item active">
+        <i class="bi bi-speedometer2 nav-icon"></i>
+        <span class="nav-item-text">Dashboard</span>
+      </div>
+      
+      <div class="nav-item">
+        <i class="bi bi-music-note-list nav-icon"></i>
+        <span class="nav-item-text">All Concerts</span>
+      </div>
+    </div>
+    
+    <div class="sidebar-footer">
+      <div class="user-avatar">AD</div>
+      <div class="sidebar-footer-text">
+        <div class="user-name">Admin User</div>
+        <div class="user-role">Super Admin</div>
+      </div>
+    </div>
+  </aside>
+  
+  <!-- Main Content -->
+  <main class="admin-main">
+    <!-- Admin Header -->
+    <header class="admin-header">
+      <div class="header-left">
+        <div class="sidebar-toggle">
+          <i class="bi bi-list"></i>
+        </div>
+        <h1 class="page-title">Dashboard</h1>
+      </div>
+      
+      <div class="header-right">
+        <a href="#" class="">
+          <button type="button" class="btn btn-danger btn-m">Logout</button>
+        </a>
+      </div>
+    </header>
+    
+    <!-- Admin Content -->
+    <div class="admin-content">
+      <!-- Stats Cards -->
+      <div class="row">
+        <div class="col-md-6 col-lg-3">
+          <div class="stats-card purple">
+            <i class="bi bi-ticket-perforated icon"></i>
+            <div class="value">1,254</div>
+            <div class="label">Total Concerts</div>
+          </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+          <div class="stats-card green">
+            <i class="bi bi-cart icon"></i>
+            <div class="value">8,742</div>
+            <div class="label">Total Orders</div>
+          </div>
+        </div>
+        
+        <div class="col-md-6 col-lg-3">
+          <div class="stats-card blue">
+            <i class="bi bi-currency-dollar icon"></i>
+            <div class="value">$124,580</div>
+            <div class="label">Total Revenue</div>
+          </div>
+        </div>
+      </div>
+
+<!-- All Concerts Section -->
+      <section id="all-section" class="mb-5">
+        <h2 class="admin-section-title">All Concerts</h2>
+        
+        <div class="admin-panel">
+          <h3>Current Concerts</h3>
+            <button class="btn btn-purple" id="save-slider-btn">
+    <i class="bi bi-save"></i> Save Slider Changes
+  </button>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Slider</th>
+                  <th>Title</th>
+                  <th>Genre</th>
+                  <th>Venue</th>
+                  <th>Date</th>
+                  <th>Prices</th>
+                  <th>Stock</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="all-table-body">
+                <!-- All concerts will be populated here by JavaScript -->
+                 
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-form">
+          <h3>Add/Edit Concert</h3>
+          <form id="all-form" action="../auth/admin.php" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="save">
+            <input type="hidden" id="all-id" name="all-id" value="">
+            
+            <div class="form-section">
+              <h5 class="form-section-title">Basic Information</h5>
+              <div class="row">
+                <div class="col-md-6">
+                  <label for="all-title" class="form-label">Title *</label>
+                  <input type="text" class="form-control" id="all-title" name="all-title" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="all-genre" class="form-label">Genre *</label>
+                  <div class="d-flex flex-wrap" id="genre-container">
+                    <!-- Genres will be loaded dynamically -->
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="addNewGenre()">
+                    <i class="bi bi-plus"></i> Add New Genre
+                  </button>
+                </div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <label for="all-venue" class="form-label">Venue *</label>
+                  <input type="text" class="form-control" id="all-venue" name="all-venue" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="all-city" class="form-label">City *</label>
+                  <input type="text" class="form-control" id="all-city" name="all-city" required>
+                </div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <label for="all-date" class="form-label">Date *</label>
+                  <input type="date" class="form-control" id="all-date" name="all-date" required>
+                </div>
+                <div class="col-md-6">
+                  <label for="all-time" class="form-label">Time *</label>
+                  <input type="time" class="form-control" id="all-time" name="all-time" required>
+                </div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-md-12">
+                  <label for="all-description" class="form-label">Short Description *</label>
+                  <textarea class="form-control" id="all-description" name="all-description" required></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h5 class="form-section-title">Ticket Prices & Stock</h5>
+              <div class="row mt-2">
+                <!-- Regular Ticket -->
+                <div class="col-md-4">
+                  <div class="ticket-price-input">
+                    <label for="all-price-regular">Regular Price *</label>
+                    <input type="number" class="form-control" id="all-price-regular" 
+                          placeholder="500000" name="all-price-regular" min="0" required>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="ticket-stock-input">
+                    <label for="all-stock-regular">Stock *</label>
+                    <input type="number" class="form-control" id="all-stock-regular" 
+                          placeholder="Enter stock" name="all-stock-regular" min="0" required>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <input type="hidden" name="all-desc-regular" value="Standard admission ticket">
+                </div>
+
+                <!-- VIP Ticket -->
+                <div class="col-md-4 mt-3">
+                  <div class="ticket-price-input">
+                    <label for="all-price-vip">VIP Price *</label>
+                    <input type="number" class="form-control" id="all-price-vip" 
+                          placeholder="1000000" name="all-price-vip" min="0" required>
+                  </div>
+                </div>
+                <div class="col-md-4 mt-3">
+                  <div class="ticket-stock-input">
+                    <label for="all-stock-vip">Stock *</label>
+                    <input type="number" class="form-control" id="all-stock-vip" 
+                          placeholder="Enter stock" name="all-stock-vip" min="0" required>
+                  </div>
+                </div>
+                <div class="col-md-4 mt-3">
+                  <input type="hidden" name="all-desc-vip" value="VIP access with premium viewing area">
+                </div>
+
+                <!-- Platinum Ticket -->
+                <div class="col-md-4 mt-3">
+                  <div class="ticket-price-input">
+                    <label for="all-price-platinum">Platinum Price *</label>
+                    <input type="number" class="form-control" id="all-price-platinum" 
+                          placeholder="1500000" name="all-price-platinum" min="0" required>
+                  </div>
+                </div>
+                <div class="col-md-4 mt-3">
+                  <div class="ticket-stock-input">
+                    <label for="all-stock-platinum">Stock *</label>
+                    <input type="number" class="form-control" id="all-stock-platinum" 
+                          placeholder="Enter stock" name="all-stock-platinum" min="0" required>
+                  </div>
+                </div>
+                <div class="col-md-4 mt-3">
+                  <input type="hidden" name="all-desc-platinum" value="Platinum experience with backstage access">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h5 class="form-section-title">Concert Details</h5>
+              <div class="row">
+                <div class="col-md-12">
+                  <label for="all-about" class="form-label">Detailed Description *</label>
+                  <textarea class="form-control" id="all-about" rows="5" name="all-about" required></textarea>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-section">
+              <h5 class="form-section-title">Artists *</h5>
+              <div id="all-artists-container">
+                <!-- Artist pertama (wajib) -->
+                <div class="artist-field mb-3 p-3 border rounded">
+                  <div class="row">
+                    <div class="col-md-5">
+                      <label class="form-label">Artist Name *</label>
+                      <input type="text" class="form-control artist-name" 
+                            name="artist-name[]" required>
+                    </div>
+                    <div class="col-md-5">
+                      <label class="form-label">Image URL *</label>
+                      <input type="url" class="form-control artist-image" 
+                            name="artist-image[]" placeholder="https://example.com/artist.jpg" required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                      <button type="button" class="btn btn-sm btn-danger w-100" disabled>
+                        <i class="bi bi-lock"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-purple mt-2" onclick="addArtistField()">
+                <i class="bi bi-plus"></i> Add Additional Artist
+              </button>
+            </div>
+            
+            <div class="form-section">
+              <h5 class="form-section-title">Location Details</h5>
+              <div class="row mt-3">
+                <div class="col-md-12">
+                  <label for="all-address" class="form-label">Address *</label>
+                  <input type="text" class="form-control" id="all-address" name="all-address" required>
+                </div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <label for="all-map-link" class="form-label">Google Maps Link</label>
+                  <input type="url" class="form-control" id="all-map-link" 
+                        placeholder="https://maps.app.goo.gl/..." name="all-map-link">
+                </div>
+                <div class="col-md-6">
+                  <label for="all-facilities" class="form-label">Facilities</label>
+                  <input type="text" class="form-control" id="all-facilities" 
+                        placeholder="Wheelchair accessible, Food stalls, etc" name="all-facilities">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h5 class="form-section-title">Concert Image *</h5>
+              <div class="image-upload-container" id="all-image-upload" onclick="document.getElementById('all-image-input').click()">
+                <i class="bi bi-image"></i>
+                <p>Click to upload concert image (Recommended: 1200x800 px)</p>
+                <input type="file" id="all-image-input" accept="image/*" style="display: none;" name="all-image-input" required>
+                <img id="all-image-preview" class="preview-image mt-3">
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-4">
+              <button type="button" class="btn btn-secondary me-2" onclick="resetAllForm()">
+                <i class="bi bi-x-circle"></i> Reset Form
+              </button>
+              <button type="submit" class="btn btn-purple">
+                <i class="bi bi-save"></i> Save Concert
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Admin Alert (hidden by default) -->
+  <div class="admin-alert alert alert-success alert-dismissible fade show" role="alert">
+    <strong>Success!</strong> Your changes have been saved.
+    <button type="button" class="btn-close" onclick="hideAlert()"></button>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+  <!-- DataTables JS -->
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+  
+  <!-- Custom Scripts -->
+  <script>
+    // Initialize the admin panel
+    document.addEventListener('DOMContentLoaded', function() {
+      loadAllConcerts();
+      loadGenres();
+      setupFormHandlers();
+      setupImageUploads();
+      setupSidebarNavigation();
+      setupScrollSpy();
+      
+      // Navbar scroll effect
+      window.addEventListener('scroll', function() {
+        const navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) {
+          navbar.classList.add('scrolled');
+        } else {
+          navbar.classList.remove('scrolled');
+        }
+      });
+      
+      // Toggle sidebar
+      document.querySelector('.sidebar-toggle').addEventListener('click', function() {
+        document.body.classList.toggle('sidebar-collapsed');
+        document.body.classList.toggle('sidebar-show');
+      });
+      
+      document.querySelector('.sidebar-overlay').addEventListener('click', function() {
+        document.body.classList.remove('sidebar-show');
+      });
+      
+      // Initialize DataTable
+      $('.admin-table').DataTable({
+        responsive: true,
+        dom: '<"top"f>rt<"bottom"lip><"clear">',
+        language: {
+          search: "_INPUT_",
+          searchPlaceholder: "Search..."
+        }
+      });
+    });
+
+    // Load genres from server
+    function loadGenres() {
+      fetch('../auth/get_genres.php')
+        .then(response => response.json())
+        .then(genres => {
+          const container = document.getElementById('genre-container');
+          container.innerHTML = '';
+          
+          genres.forEach(genre => {
+            const div = document.createElement('div');
+            div.className = 'form-check me-3 mb-2';
+            div.innerHTML = `
+              <input class="form-check-input" type="checkbox" name="all-genre[]" 
+                     value="${genre.GenreID}" id="genre-${genre.GenreID}">
+              <label class="form-check-label" for="genre-${genre.GenreID}">
+                ${genre.genre}
+              </label>
+            `;
+            container.appendChild(div);
+          });
+        })
+        .catch(error => {
+          console.error('Error loading genres:', error);
+          showAlert('Error loading genres: ' + error.message);
+        });
+    }
+
+    // Add new genre
+    function addNewGenre() {
+      const newGenre = prompt('Enter new genre name:');
+      if (newGenre) {
+        fetch('../auth/add_genre.php', {
+          method: 'POST',
+          body: JSON.stringify({ genre: newGenre }),
+          headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.id) {
+            loadGenres(); // Reload genres
+          }
+        })
+        .catch(error => {
+          showAlert('Error adding genre: ' + error.message);
+        });
+      }
+    }
+
+    // CRUD field artist
+    function addArtistField(artist = { name: '', image: '' }) {
+      const container = document.getElementById('all-artists-container');
+      const artistId = Date.now();
+    
+      const artistDiv = document.createElement('div');
+      artistDiv.className = 'artist-field mb-3 p-3 border rounded';
+      artistDiv.dataset.id = artistId;
+    
+      artistDiv.innerHTML = `
+        <div class="row">
+          <div class="col-md-5">
+            <label class="form-label">Artist Name</label>
+            <input type="text" class="form-control artist-name" 
+                  name="artist-name[]" value="${artist.name}" required>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">Image URL</label>
+            <input type="url" class="form-control artist-image" 
+                  name="artist-image[]" value="${artist.image}" placeholder="https://example.com/artist.jpg">
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="button" class="btn btn-sm btn-danger w-100" 
+                onclick="removeArtistField('${artistId}')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      container.appendChild(artistDiv);
+    }
+
+    function removeArtistField(id) {
+      const field = document.querySelector(`.artist-field[data-id="${id}"]`);
+      if (field) {
+        field.remove();
+      }
+    }
+
+    // View concert details
+    function viewConcertDetails(id) {
+      fetch(`../auth/get_concert.php?id=${id}`)
+        .then(response => response.json())
+        .then(concert => {
+          createConcertModal(concert);
+        })
+        .catch(error => {
+          console.error('Error loading concert:', error);
+          showAlert('Error loading concert: ' + error.message);
+        });
+    }
+
+    // Create concert modal
+    function createConcertModal(concert) {
+      const modalHtml = `
+      <div class="modal fade" id="concertDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog concert-modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">${concert.Title}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-4">
+                  <img src="${concert.ImageURL}" class="img-fluid rounded mb-3" alt="${concert.Title}">
+                  <div class="concert-info">
+                    <p><strong>Date:</strong> ${new Date(concert.ConcertDate).toLocaleDateString()}</p>
+                    <p><strong>Time:</strong> ${concert.ConcertTime}</p>
+                    <p><strong>Venue:</strong> ${concert.Venue}, ${concert.City}</p>
+                  </div>
+                  
+                  <div class="ticket-info mt-3">
+                    <h6>Ticket Prices:</h6>
+                    <ul class="list-group">
+                      ${concert.Tickets.map(ticket => `
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                          ${ticket.TypeName}
+                          <span class="badge bg-primary rounded-pill">Rp ${ticket.Price.toLocaleString('id-ID', {maximumFractionDigits:0})}</span>
+                        </li>
+                      `).join('')}
+                    </ul>
+                  </div>
+                </div>
+                
+                <div class="col-md-8">
+                  <h5>About the Event</h5>
+                  <p>${concert.LongDescription || concert.Description || 'No description available'}</p>
+                  
+                  ${concert.Artist ? `
+                  <h5 class="mt-3">Featured Artist</h5>
+                  <div class="d-flex align-items-center">
+                    ${concert.Artist.ImageURL ? `<img src="${concert.Artist.ImageURL}" alt="${concert.Artist.Name}" class="artist-image me-3" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">` : ''}
+                    <div>
+                      <h6>${concert.Artist.Name}</h6>
+                    </div>
+                  </div>
+                  ` : ''}
+                  
+                  <h5 class="mt-3">Location</h5>
+                  <p><i class="bi bi-geo-alt"></i> ${concert.Address || 'No address provided'}</p>
+                  
+                  ${concert.Facilities ? `
+                  <h5 class="mt-3">Facilities</h5>
+                  <p>${concert.Facilities}</p>
+                  ` : ''}
+                  
+                  ${concert.MapLink ? `
+                <h5 class="mt-3">Map</h5>
+                <div class="location-map">
+                  <iframe
+                    src="${concert.MapLink}"
+                    width="100%"
+                    height="100%"
+                    style="border: 0"
+                    allowfullscreen=""
+                    loading="lazy"
+                  ></iframe>
+                </div>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      `;
+    
+      // Add modal to DOM
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('concertDetailModal'));
+      modal.show();
+    
+      // Remove modal after close
+      document.getElementById('concertDetailModal').addEventListener('hidden.bs.modal', function() {
+        this.remove();
+      });
+    }
+
+    // Load all concerts
+   function loadAllConcerts() {
+      fetch('../auth/get_concerts.php')
+        .then(response => response.json())
+        .then(concerts => {
+          const tableBody = document.getElementById('all-table-body');
+          tableBody.innerHTML = '';
+          
+          concerts.forEach(concert => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td><img src="${concert.ImageURL}" alt="${concert.Title}" style="width: 60px; height: 60px; object-fit: cover;"></td>
+              <td>
+  <div class="form-check form-switch">
+    <input type="checkbox" class="form-check-input slider-checkbox" 
+           data-id="${concert.ConcertID}" ${concert.IsSlider ? 'checked' : ''}>
+  </div>
+</td>
+              <td>${concert.Title}</td>
+              <td>${concert.Genres || 'N/A'}</td>
+              <td>${concert.Venue}, ${concert.City}</td>
+              <td>${new Date(concert.ConcertDate).toLocaleDateString()}</td>
+              <td>
+                <span class="price-badge">Regular: Rp ${concert.Prices.regular.toLocaleString('id-ID', {maximumFractionDigits:0})}</span>
+                <span class="price-badge">VIP: Rp ${concert.Prices.vip.toLocaleString('id-ID', {maximumFractionDigits:0})}</span>
+                <span class="price-badge">Platinum: Rp ${concert.Prices.platinum.toLocaleString('id-ID', {maximumFractionDigits:0})}</span>
+              </td>
+              <td>
+                <span class="stock-badge">Regular: ${concert.Stocks.regular}</span>
+                <span class="stock-badge">VIP: ${concert.Stocks.vip}</span>
+                <span class="stock-badge">Platinum: ${concert.Stocks.platinum}</span>
+              </td>
+              <td>
+                <button class="btn btn-view admin-action-btn" onclick="viewConcertDetails(${concert.ConcertID})">
+                  <i class="bi bi-eye"></i> View
+                </button>
+                <button class="btn btn-edit admin-action-btn" onclick="editAllConcert(${concert.ConcertID})">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-delete admin-action-btn" onclick="deleteAllConcert(${concert.ConcertID})">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            `;
+            tableBody.appendChild(row);
+          });
+        })
+        .catch(error => {
+          console.error('Error loading concerts:', error);
+          showAlert('Error loading concerts: ' + error.message);
+        });
+    }
+
+    // Setup form submission handlers
+    function setupFormHandlers() {
+      const allForm = document.getElementById('all-form');
+      if (allForm) {
+        allForm.addEventListener('submit', function(e) {
+          saveAllConcert(e);
+        });
+      }
+    }
+
+    // Setup image upload previews
+    function setupImageUploads() {
+      // All concerts image upload
+      document.getElementById('all-image-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(event) {
+            const preview = document.getElementById('all-image-preview');
+            preview.src = event.target.result;
+            preview.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    // Save concert
+    function saveAllConcert(e) {
+      e.preventDefault();
+      
+      // Validate form
+      const form = document.getElementById('all-form');
+      if (!form.checkValidity()) {
+        alert('Please fill all required fields');
+        return;
+      }
+      
+      const formData = new FormData(form);
+      
+      fetch('../auth/admin.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.text().then(text => {
+            throw new Error(`HTTP ${response.status}: ${text}`);
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.status === 'success') {
+          showAlert('Concert saved successfully!');
+          resetAllForm();
+          loadAllConcerts();
+        } else {
+          showAlert('Error: ' + (data.message || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        console.error('Fetch error:', error);
+        showAlert('Error: ' + error.message);
+      });
+    }
+
+    // Edit concert
+ function editAllConcert(id) {
+      fetch(`../auth/get_concert.php?id=${id}`)
+        .then(response => response.json())
+        .then(concert => {
+          // Fill form with concert data
+          document.getElementById('all-id').value = concert.ConcertID;
+          document.getElementById('all-title').value = concert.Title;
+          
+          // Set genres
+          const genreChecks = document.querySelectorAll('input[name="all-genre[]"]');
+          genreChecks.forEach(check => {
+            check.checked = concert.Genres.some(g => g.GenreID == check.value);
+          });
+          
+          document.getElementById('all-venue').value = concert.Venue;
+          document.getElementById('all-city').value = concert.City;
+          document.getElementById('all-date').value = concert.ConcertDate;
+          document.getElementById('all-time').value = concert.ConcertTime;
+          document.getElementById('all-description').value = concert.Description;
+          document.getElementById('all-about').value = concert.LongDescription;
+          document.getElementById('all-address').value = concert.Address;
+          document.getElementById('all-map-link').value = concert.MapLink || '';
+          document.getElementById('all-facilities').value = concert.Facilities || '';
+          
+          // Set tickets
+          concert.Tickets.forEach(ticket => {
+            const type = ticket.TypeName.toLowerCase();
+            if (document.getElementById(`all-price-${type}`)) {
+              document.getElementById(`all-price-${type}`).value = ticket.Price;
+              document.getElementById(`all-stock-${type}`).value = ticket.QuantityAvailable;
+            }
+          });
+          
+          // Set artist
+          document.getElementById('all-artists-container').innerHTML = '';
+          if (concert.Artist) {
+            const artistDiv = document.createElement('div');
+            artistDiv.className = 'artist-field mb-3 p-3 border rounded';
+            artistDiv.innerHTML = `
+              <div class="row">
+                <div class="col-md-5">
+                  <label class="form-label">Artist Name *</label>
+                  <input type="text" class="form-control artist-name" 
+                         name="artist-name[]" value="${concert.Artist.Name}" required>
+                </div>
+                <div class="col-md-5">
+                  <label class="form-label">Image URL *</label>
+                  <input type="url" class="form-control artist-image" 
+                         name="artist-image[]" value="${concert.Artist.ImageURL}" placeholder="https://example.com/artist.jpg" required>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                  <button type="button" class="btn btn-sm btn-danger w-100" disabled>
+                    <i class="bi bi-lock"></i>
+                  </button>
+                </div>
+              </div>
+            `;
+            document.getElementById('all-artists-container').appendChild(artistDiv);
+          }
+          
+          // Set image preview
+          if (concert.ImageURL) {
+            const preview = document.getElementById('all-image-preview');
+            preview.src = concert.ImageURL;
+            preview.style.display = 'block';
+          }
+          
+          // Remove required attribute for edit mode
+          document.getElementById('all-image-input').removeAttribute('required');
+          
+          // Scroll to form
+          document.getElementById('all-form').scrollIntoView({ behavior: 'smooth' });
+        })
+        .catch(error => {
+          console.error('Error loading concert:', error);
+          showAlert('Error loading concert: ' + error.message);
+        });
+    }
+
+
+    // Delete concert
+    function deleteAllConcert(id) {
+      if (confirm('Are you sure you want to delete this concert?')) {
+        const formData = new FormData();
+        formData.append('action', 'delete');
+        formData.append('id', id);
+        
+        fetch('../auth/admin.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            showAlert('Concert deleted successfully!');
+            loadAllConcerts();
+          } else {
+            showAlert('Error: ' + (data.message || 'Delete failed'));
+          }
+        })
+        .catch(error => {
+          showAlert('Error: ' + error.message);
+        });
+      }
+    }
+
+    // Reset form
+    function resetAllForm() {
+      document.getElementById('all-form').reset();
+      document.getElementById('all-id').value = '';
+      document.getElementById('all-image-preview').style.display = 'none';
+      
+      // Reset genres
+      const genreChecks = document.querySelectorAll('input[name="all-genre[]"]');
+      genreChecks.forEach(check => check.checked = false);
+      
+      // Reset artists
+      document.getElementById('all-artists-container').innerHTML = `
+        <div class="artist-field mb-3 p-3 border rounded">
+          <div class="row">
+            <div class="col-md-5">
+              <label class="form-label">Artist Name *</label>
+              <input type="text" class="form-control artist-name" 
+                    name="artist-name[]" required>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Image URL *</label>
+              <input type="url" class="form-control artist-image" 
+                    name="artist-image[]" placeholder="https://example.com/artist.jpg" required>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <button type="button" class="btn btn-sm btn-danger w-100" disabled>
+                <i class="bi bi-lock"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Add required back for new concert
+      document.getElementById('all-image-input').setAttribute('required', 'required');
+    }
+
+    // Show alert message
+    function showAlert(message) {
+      const alert = document.querySelector('.admin-alert');
+      alert.querySelector('strong').textContent = message.split('!')[0] + '!';
+      if (message.split('!')[1]) {
+        alert.querySelector('strong').nextSibling.textContent = ' ' + message.split('!')[1];
+      }
+      alert.classList.add('show');
+      
+      // Hide after 3 seconds
+      setTimeout(hideAlert, 3000);
+    }
+
+    function hideAlert() {
+      document.querySelector('.admin-alert').classList.remove('show');
+    }
+
+    // Setup sidebar navigation
+    function setupSidebarNavigation() {
+      const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+      navItems.forEach(item => {
+        item.addEventListener('click', function() {
+          navItems.forEach(nav => nav.classList.remove('active'));
+          this.classList.add('active');
+          
+          if (document.body.classList.contains('sidebar-show')) {
+            document.body.classList.remove('sidebar-show');
+          }
+        });
+      });
+    }
+
+    // Setup scroll spy
+    function setupScrollSpy() {
+      const sections = [
+        { id: 'all-section', navText: 'All Concerts' }
+      ];
+      
+      const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+      
+      function checkActiveSection() {
+        let currentSection = null;
+        const scrollPosition = window.scrollY + 100;
+        const headerHeight = document.querySelector('.admin-header').offsetHeight;
+        
+        // Check if at top of page
+        if (scrollPosition < headerHeight) {
+          currentSection = 'Dashboard';
+        } else {
+          // Check other sections
+          for (const section of sections) {
+            const element = document.getElementById(section.id);
+            if (element) {
+              const offsetTop = element.offsetTop - headerHeight;
+              const offsetHeight = element.offsetHeight;
+              
+              if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+                currentSection = section.navText;
+                break;
+              }
+            }
+          }
+        }
+        
+        // Update active nav item
+        navItems.forEach(item => {
+          const itemText = item.querySelector('.nav-item-text').textContent.trim();
+          if (itemText === currentSection) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+      
+      // Initial check
+      checkActiveSection();
+      
+      // Check on scroll
+      window.addEventListener('scroll', checkActiveSection);
+    }
+
+// Fungsi untuk menyimpan perubahan slider
+function saveSliderChanges() {
+  const sliderCheckboxes = document.querySelectorAll('.slider-checkbox');
+  const updates = [];
+  
+  sliderCheckboxes.forEach(checkbox => {
+    updates.push({
+      id: checkbox.dataset.id,
+      isSlider: checkbox.checked ? 1 : 0
+    });
+  });
+  
+  fetch('../auth/update_slider.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ updates })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      showAlert('Slider changes saved successfully!');
+    } else {
+      showAlert('Error saving slider changes: ' + data.message);
+    }
+  })
+  .catch(error => {
+    showAlert('Error: ' + error.message);
+  });
+}
+
+// Event listener untuk tombol save
+document.getElementById('save-slider-btn').addEventListener('click', saveSliderChanges);
+  </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="/assets/images/logo_1.png" type="image/x-icon">
+    <title>FAQs - ConcertTix</title>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --primary-purple: #8a4fff;
+        --primary-orange: #ff6600;
+        --text-dark: #2d3436;
+        --text-light: #636e72;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        color: var(--text-dark);
+        line-height: 1.6;
+        background-color: #f5f0ff;
+        padding: 0;
+        margin: 0;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+
+      .faq-header {
+        text-align: center;
+        margin-bottom: 50px;
+      }
+
+      .faq-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-purple);
+        margin-bottom: 15px;
+      }
+
+      .faq-header p {
+        color: var(--text-light);
+        font-size: 1.1rem;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .accordion {
+        --bs-accordion-border-color: rgba(138, 79, 255, 0.2);
+        --bs-accordion-btn-focus-box-shadow: 0 0 0 0.25rem rgba(138, 79, 255, 0.25);
+      }
+
+      .accordion-button {
+        font-weight: 600;
+        color: var(--text-dark);
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+
+      .accordion-button:not(.collapsed) {
+        color: var(--primary-purple);
+        background-color: rgba(138, 79, 255, 0.05);
+      }
+
+      .accordion-body {
+        color: var(--text-light);
+      }
+
+      .music-icon {
+        color: var(--primary-purple);
+        margin-right: 10px;
+      }
+
+      .copyright {
+        text-align: center;
+        padding: 30px 0;
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-top: 40px;
+        border-top: 1px solid rgba(138, 79, 255, 0.1);
+      }
+
+      /* Floating music notes */
+      .music-note {
+        position: fixed;
+        font-size: 1.5rem;
+        opacity: 0.15;
+        z-index: -1;
+        color: var(--primary-purple);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Floating music notes -->
+    <div class="music-note" style="top: 15%; left: 10%;">♪</div>
+    <div class="music-note" style="top: 25%; right: 15%;">♫</div>
+    <div class="music-note" style="bottom: 30%; left: 12%;">♩</div>
+    <div class="music-note" style="bottom: 20%; right: 8%;">♬</div>
+
+    <div class="container">
+      <div class="faq-header">
+        <h1>Frequently Asked Questions</h1>
+        <p>Find answers to common questions about ticket purchases, events, and more.</p>
+      </div>
+
+      <div class="accordion" id="faqAccordion">
+        <!-- Ticket Purchases -->
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#purchase1">
+              <i class="bi bi-ticket-perforated music-icon"></i> How do I purchase tickets?
+            </button>
+          </h2>
+          <div id="purchase1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              <p>To purchase tickets:</p>
+              <ol>
+                <li>Browse events on our website or app</li>
+                <li>Select your desired event and click "Buy Tickets"</li>
+                <li>Choose your seats or ticket type</li>
+                <li>Proceed to checkout and enter payment details</li>
+                <li>Receive your e-tickets via email</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#purchase2">
+              <i class="bi bi-credit-card music-icon"></i> What payment methods do you accept?
+            </button>
+          </h2>
+          <div id="purchase2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              We accept all major credit cards (Visa, Mastercard, American Express), debit cards, and digital wallets including GoPay, OVO, and DANA. Bank transfers are also available for some events.
+            </div>
+          </div>
+        </div>
+
+        <!-- Ticket Delivery -->
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#delivery1">
+              <i class="bi bi-envelope music-icon"></i> How will I receive my tickets?
+            </button>
+          </h2>
+          <div id="delivery1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Most tickets are delivered electronically via email as PDF attachments or mobile tickets. You'll receive them immediately after purchase. For some events, tickets may be available for mobile entry only through our app.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#delivery2">
+              <i class="bi bi-phone music-icon"></i> Can I use my mobile phone for entry?
+            </button>
+          </h2>
+          <div id="delivery2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              Yes, for most events you can present your ticket barcode on your smartphone screen for scanning at the venue. Ensure your phone is charged and brightness is turned up. Some venues may require printed tickets - check your ticket instructions.
+            </div>
+          </div>
+        </div>
+
+        <!-- Refunds & Exchanges -->
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#refund1">
+              <i class="bi bi-arrow-left-right music-icon"></i> Can I exchange or refund my tickets?
+            </button>
+          </h2>
+          <div id="refund1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              <p>All ticket sales are typically final. Exchanges or refunds may be available only if:</p>
+              <ul>
+                <li>The event is canceled</li>
+                <li>The event is rescheduled and you can't attend the new date</li>
+                <li>Required by local consumer laws</li>
+              </ul>
+              <p>Please see our <a href="/refund-policy.html">Refund Policy</a> for complete details.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Event Information -->
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#event1">
+              <i class="bi bi-calendar-event music-icon"></i> What if an event is postponed or canceled?
+            </button>
+          </h2>
+          <div id="event1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              <p><strong>Postponed events:</strong> Your tickets will typically be valid for the new date. If you can't attend, refunds may be available during a limited window.</p>
+              <p><strong>Canceled events:</strong> You'll automatically receive a refund to your original payment method within 14 business days.</p>
+              <p>We'll notify you by email if there are any changes to your event.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#event2">
+              <i class="bi bi-info-circle music-icon"></i> How can I get event updates?
+            </button>
+          </h2>
+          <div id="event2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              <p>We recommend:</p>
+              <ul>
+                <li>Following the event organizer's social media</li>
+                <li>Checking our website for updates</li>
+                <li>Ensuring your contact information is current in your account</li>
+                <li>Subscribing to our newsletter for important announcements</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account Management -->
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#account1">
+              <i class="bi bi-person music-icon"></i> How do I reset my password?
+            </button>
+          </h2>
+          <div id="account1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+              <p>To reset your password:</p>
+              <ol>
+                <li>Go to the login page</li>
+                <li>Click "Forgot Password"</li>
+                <li>Enter the email associated with your account</li>
+                <li>Check your email for a password reset link</li>
+                <li>Follow the instructions to create a new password</li>
+              </ol>
+              <p>*You can also change password by accessing profile menu</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="copyright">
+      <div class="container">
+        <p>&copy; 2025 ConcertTix. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

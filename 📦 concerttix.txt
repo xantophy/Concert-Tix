@@ -1,0 +1,76 @@
+📦 concerttix
+├── 📂 public/                   # File yang diakses publik
+│   ├── 📜 index.html    ✅        # Landing Page (Home)
+│   ├── 📂 events/               # Halaman event
+│   │   ├── 📜 index.html  ✅      # Generate_Search_Page (Daftar Konser)
+│   │   └── 📜 [id].html   ✅?      # Dynamic route untuk detail event (detail_concert.html)
+│   └── 📜 about.html  ✅          # About Us   
+│
+├── 📂 auth/                     # Autentikasi
+│   ├── 📜 login.html  ✅
+│   └── 📜 signup.html  ✅
+│
+├── 📂 user/                     # Area pengguna
+│   ├── 📜 profile.html    ✅      # Profil_Page
+│   ├── 📂 tickets/              # Manajemen tiket
+│   │   ├── 📜 index.html  ✅      # Daftar tiket
+│   │   └── 📜 [id].html         # Details_Ticket
+│   ├── 📂 cart/
+│   │   └── 📜 index.html  ✅      # Cart_Page
+│   └── 📂 payment/
+│       ├── 📜 index.html        🪲 # Payment
+│       └── 📜 confirmation.html ✅ # Payment_Confirmation
+│
+├── 📂 admin/                    # Dashboard admin
+│   ├── 📜 index.html     ✅       # Admin_Page
+│   ├── 📂 events/               # Manajemen event
+│   └── 📂 reports/              # Laporan penjualan
+│
+├── 📂 assets/                   # Resource global
+│   ├── 📂 css/
+│   │   ├── 📜 main.css          # Style global
+│   │   ├── 📜 auth.css          # Style auth page
+│   │   └── 📜 admin.css         # Style admin
+│   ├── 📂 js/
+│   │   ├── 📜 api.js            # Handler API
+│   │   ├── 📜 cart.js           # Logic keranjang
+│   │   └── 📜 auth.js           # Validasi form
+│   └── 📂 images/
+│       ├── 📂 icons/            # SVG/icon
+│       ├── 📂 events/           # Gambar konser
+│       └── 📂 payments/         # Logo pembayaran
+│
+├── 📂 api/                      # Endpoint API (Mock)
+│   ├── 📜 events.json           # Data konser
+│   └── 📜 users.json            # Data user
+│
+├── 📂 lost/                      # Error Missing Page
+│   ├── 📜 404_page.html     ✅     # show error 404
+│   └── 📜 bootstrap.css          # style 404
+
+└── 📜 .htaccess                 # Konfigurasi server (Apache)
+
+#all-concerts-section
+
+
+merujuk konser atau tiket sesuai id
+├──href="/events/${concert.id}/"
+├──href="/user/payment/?event=${concert.id}"
+├──href="/user/cart/?add=${concert.id}"
+
+       """"revisi alamat tujuan"""""
+
+
+
+NOTE:
+-Access clickable: carousel,
+-Pop Up Button/Alert: "login berhasil", "pembayaran gagal", "tidak boleh kosong", etc.
+-Navbar after login/signup
+-Peringatan login/signup sebelum bisa membeli tiket (keranjang/buy/check out)
+-Notif added to cart/deleted/etc
+-Menu genre offcanvas 
+-Button your email di footer
+-Button search di navbar
+
+ERROR/BUG:
+-payment, walau belum memilih metode bayar tetap lanjut ke page confirmation.html
