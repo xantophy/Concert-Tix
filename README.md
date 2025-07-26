@@ -4,6 +4,8 @@
 
 ConcertTix adalah platform web untuk pemesanan tiket konser secara online. Dibangun untuk memberikan pengalaman pengguna yang mudah, cepat, dan informatif dalam mencari dan membeli tiket acara musik favorit mereka.
 
+---
+
 ## 🚀 Fitur Utama
 
 - 🔐 **Autentikasi Pengguna**
@@ -35,22 +37,28 @@ ConcertTix adalah platform web untuk pemesanan tiket konser secara online. Diban
    ```bash
    git clone https://github.com/xantophy/Concert-Tix.git
    cd Concert-Tix
-
+   
 2. Import file SQL:
-   Buka phpMyAdmin
-   Buat database baru: concert_tix
-   Import file Database/concert_tix.sql
+   - Buka phpMyAdmin melalui browser:
+     http://localhost/phpmyadmin
+   - Buat database baru dengan nama:
+     concert_tix
+   - Import file:
+     Database/concert_tix.sql
 
 3. Jalankan di server lokal:
-   Salin ke htdocs/ (jika pakai XAMPP)
-   Akses via browser: http://localhost/Concert-Tix/public/
+   - Salin folder proyek ke direktori XAMPP, contoh:
+     C:\xampp\htdocs\Concert-Tix
+   - Akses melalui browser:
+     http://localhost/Concert-Tix/public/
 
 🧑‍💻 Kontributor
-Muhammad Alif Indrastata (@xantophy)
-Muhammad Affan Al Ghifari (@Sipanpan)
-Muhammad Imam Hakim (@?-?)
-Muhammad Daud Faizurrahman (@MuhammadDaudF)
+- Muhammad Alif Indrastata (@xantophy)
+- Muhammad Affan Al Ghifari (@Sipanpan)
+- Muhammad Imam Hakim (@?-?)
+- Muhammad Daud Faizurrahman (@MuhammadDaudF)
+---
+📄 Lisensi  
 
-📄 Lisensi
 Proyek ini bersifat open-source dan dapat digunakan untuk keperluan pembelajaran. Harap cantumkan atribusi jika digunakan dalam proyek publik.
 
