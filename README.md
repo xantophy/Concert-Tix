@@ -1,6 +1,6 @@
-<img width="44" height="39" alt="logo_1" src="https://github.com/user-attachments/assets/34ed673c-61e4-4794-b8cc-17b7d6f185f0" />
 
-# 🎫 ConcertTix
+
+# <img width="44" height="39" alt="logo_1" src="https://github.com/user-attachments/assets/34ed673c-61e4-4794-b8cc-17b7d6f185f0" /> ConcertTix
 
 ConcertTix adalah platform web untuk pemesanan tiket konser secara online. Dibangun untuk memberikan pengalaman pengguna yang mudah, cepat, dan informatif dalam mencari dan membeli tiket acara musik favorit mereka.
 
