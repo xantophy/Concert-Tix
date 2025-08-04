@@ -32,8 +32,25 @@ try {
     ");
     $stmt->execute([$cartId]);
     $items = $stmt->fetchAll();
+// Di akhir try block sebelum json_encode
+$baseImagePath = '/assets/images/'; // Path absolut dari root
+$defaultImage = $baseImagePath . 'default-concert.jpg';
 
-    echo json_encode(['success' => true, 'items' => $items]);
+$items = array_map(function($item) use ($baseImagePath, $defaultImage) {
+    // Jika ImageURL kosong atau tidak valid
+    if (empty($item['ImageURL'])) {
+        $item['ImageURL'] = $defaultImage;
+    } 
+    // Jika ImageURL relatif (mengandung ../)
+    else if (strpos($item['ImageURL'], '../') === 0) {
+        $item['ImageURL'] = $baseImagePath . basename($item['ImageURL']);
+    }
+    // Jika ImageURL sudah absolut, biarkan apa adanya
+    
+    return $item;
+}, $items);
+
+echo json_encode(['success' => true, 'items' => $items]);
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 }

@@ -1353,7 +1353,7 @@
       <div class="card-body">
         <div class="d-flex">
           <input class="form-check-input me-3 mt-2 select-item" type="checkbox" checked>
-          <img src="${item.ImageURL}" class="me-3 cart-item-img" alt="Concert" style="width: 100px; height: 100px; object-fit: cover;">
+          <img src="${item.ImageURL || '../../assets//images/default-concert.png'}" class="me-3 cart-item-img" alt="${item.Title}" style="width: 100px; height: 100px; object-fit: cover;">
           <div class="flex-grow-1">
             <h6 class="fw-bold mb-1">${item.Title}</h6>
             <p class="mb-0 text-muted">${formatDate(item.ConcertDate)} - ${item.Venue}</p>

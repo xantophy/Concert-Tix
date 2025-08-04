@@ -879,7 +879,7 @@
   </div>
 </div>
 
-  <!-- Payment Content -->
+ <!-- Payment Content -->
   <div class="payment-container container my-5">
     <div class="row g-4">
       <div class="col-lg-8">
@@ -887,64 +887,18 @@
         <div class="payment-card">
           <h4 class="section-title">Order Summary</h4>
           
-          <div class="concert-item">
-            <img src="https://i.pinimg.com/736x/bc/af/9b/bcaf9bfe50f2e039edbfcd7c191df4b6.jpg" alt="Coldplay Concert" />
-            <div class="concert-info w-100">
-              <div class="d-flex justify-content-between align-items-start">
-                <p class="fw-bold">Coldplay World Tour</p>
-                <span class="price-tag">Rp 1.500.000</span>
+          <div id="cart-items-container">
+            <div class="text-center my-5">
+              <div class="spinner-border text-purple" role="status">
+                <span class="visually-hidden">Loading...</span>
               </div>
-              <small>Experience the magical performance of Coldplay with their spectacular light show</small>
-              <div class="mt-2">
-                <small class="text-muted">1 Tiket VIP • Gelora Bung Karno • 15 Juli 2024</small>
-              </div>
-            </div>
-          </div>
-          
-          <div class="concert-item">
-            <img src="https://i.pinimg.com/736x/04/a6/b0/04a6b06634ce8b9c7a9cfabcfc395dc9.jpg" alt="Blackpink Concert" />
-            <div class="concert-info w-100">
-              <div class="d-flex justify-content-between align-items-start">
-                <p class="fw-bold">Blackpink Born Pink</p>
-                <span class="price-tag">Rp 1.200.000</span>
-              </div>
-              <small>The most popular K-Pop girl group brings their world tour</small>
-              <div class="mt-2">
-                <small class="text-muted">1 Tiket CAT 1 • ICE BSD • 20 Agustus 2024</small>
-              </div>
-            </div>
-          </div>
-                    <div class="concert-item">
-            <img src="https://i.pinimg.com/736x/bc/af/9b/bcaf9bfe50f2e039edbfcd7c191df4b6.jpg" alt="Coldplay Concert" />
-            <div class="concert-info w-100">
-              <div class="d-flex justify-content-between align-items-start">
-                <p class="fw-bold">Coldplay World Tour</p>
-                <span class="price-tag">Rp 1.500.000</span>
-              </div>
-              <small>Experience the magical performance of Coldplay with their spectacular light show</small>
-              <div class="mt-2">
-                <small class="text-muted">1 Tiket VIP • Gelora Bung Karno • 15 Juli 2024</small>
-              </div>
-            </div>
-          </div>
-          
-          <div class="concert-item">
-            <img src="https://i.pinimg.com/736x/04/a6/b0/04a6b06634ce8b9c7a9cfabcfc395dc9.jpg" alt="Blackpink Concert" />
-            <div class="concert-info w-100">
-              <div class="d-flex justify-content-between align-items-start">
-                <p class="fw-bold">Blackpink Born Pink</p>
-                <span class="price-tag">Rp 1.200.000</span>
-              </div>
-              <small>The most popular K-Pop girl group brings their world tour</small>
-              <div class="mt-2">
-                <small class="text-muted">1 Tiket CAT 1 • ICE BSD • 20 Agustus 2024</small>
-              </div>
+              <p>Loading your cart items...</p>
             </div>
           </div>
         </div>
 
         <!-- Payment Methods -->
-  <div class="payment-card">
+        <div class="payment-card">
           <h4 class="section-title">Payment Methods</h4>
           
           <div class="payment-method-tabs">
@@ -953,13 +907,12 @@
             <div class="payment-method-tab" onclick="showPaymentMethod('qris')">QRIS</div>
           </div>
           
-          <!-- Payment Placeholder (awal ditampilkan) -->
           <div id="payment-placeholder" class="payment-placeholder">
             <i class="bi bi-credit-card"></i>
             <p>Select payment method to see the options</p>
           </div>
           
-          <!-- Bank Options (awal disembunyikan) -->
+          <!-- Bank Options -->
           <div id="bank-options" class="payment-options-container">
             <div class="payment-options-scroll">
               <div class="payment-option" onclick="selectPaymentMethod('BCA')">
@@ -1026,12 +979,11 @@
           </div>
         </div>
         
-        
         <!-- Pay Button -->
         <div class="mt-4">
-          <a href="../user/payment/confirmation.html" class="btn btn-pay" onclick="processPayment()">
+          <button id="pay-button" class="btn btn-pay" disabled onclick="processPayment()">
             <i class="bi bi-credit-card me-2"></i> Buy Now
-          </a>
+          </button>
         </div>
       </div>
       
@@ -1042,8 +994,8 @@
           <h6 class="fw-bold mb-3">Use promos to save more!</h6>
           <div class="promo-box">
             <div class="input-group">
-              <input type="text" class="form-control promo-input" placeholder="Enter promo code">
-              <button class="btn btn-apply">Apply</button>
+              <input type="text" id="promo-code" class="form-control promo-input" placeholder="Enter promo code">
+              <button class="btn btn-apply" onclick="applyPromo()">Apply</button>
             </div>
           </div>
         </div>
@@ -1053,24 +1005,24 @@
           <div class="price-breakdown">
             <div class="price-item">
               <span class="price-label">Total Price</span>
-              <span class="price-value">Rp 2.700.000</span>
+              <span class="price-value" id="total-price">Rp 0</span>
             </div>
             <div class="price-item">
               <span class="price-label">Service Fee</span>
-              <span class="price-value">Rp 10.000</span>
+              <span class="price-value" id="service-fee">Rp 0</span>
             </div>
             <div class="price-item">
               <span class="price-label">Discount</span>
-              <span class="price-value text-success">- Rp 0</span>
+              <span class="price-value text-success" id="discount">- Rp 0</span>
             </div>
             <hr>
             <div class="price-item mt-3">
               <span class="price-label fw-bold">Total payment</span>
-              <span class="total-price">Rp 2.710.000</span>
+              <span class="total-price" id="grand-total">Rp 0</span>
             </div>
           </div>
         </div>
-        
+    
         <!-- Important Info -->
         <div class="payment-card">
           <h6 class="fw-bold mb-3">Important Information</h6>
@@ -1341,6 +1293,190 @@ function processPayment() {
     window.addEventListener('DOMContentLoaded', () => {
       // Setup offcanvas
       setupOffcanvas();
+    });
+  </script>
+
+   <!-- Custom JavaScript -->
+  <script>
+    // Konfigurasi
+    const API_BASE_URL = '/concert/user/payment/api/';
+    let selectedPaymentMethod = null;
+    let cartItems = [];
+    let promoDiscount = 0;
+
+    // Format Rupiah
+    function formatRupiah(amount) {
+      return 'Rp ' + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    // Memuat data keranjang
+    async function loadCart() {
+      try {
+        const response = await fetch(API_BASE_URL + 'cart.php');
+        const data = await response.json();
+        
+        if (data.success) {
+          cartItems = data.items;
+          renderCartItems();
+          updatePriceSummary(data.summary);
+          document.getElementById('pay-button').disabled = false;
+        } else {
+          showError(data.message);
+        }
+      } catch (error) {
+        showError('Failed to load cart data');
+        console.error('Error:', error);
+      }
+    }
+
+    // Render item keranjang
+    function renderCartItems() {
+      const container = document.getElementById('cart-items-container');
+      
+      if (cartItems.length === 0) {
+        container.innerHTML = `
+          <div class="alert alert-info">Your cart is empty</div>
+          <a href="/concert/public/" class="btn btn-purple-gradient">Browse Concerts</a>
+        `;
+        return;
+      }
+      
+      let html = '';
+      cartItems.forEach(item => {
+        html += `
+          <div class="concert-item">
+            <img src="${item.image_url}" alt="${item.concert_title}" />
+            <div class="concert-info w-100">
+              <div class="d-flex justify-content-between align-items-start">
+                <p class="fw-bold">${item.concert_title}</p>
+                <span class="price-tag">${formatRupiah(item.price)}</span>
+              </div>
+              <small>${item.concert_description}</small>
+              <div class="mt-2">
+                <small class="text-muted">
+                  ${item.quantity} ${item.ticket_type} • 
+                  ${item.venue} • 
+                  ${item.concert_date}
+                </small>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    // Update ringkasan harga
+    function updatePriceSummary(summary) {
+      document.getElementById('total-price').textContent = formatRupiah(summary.total_price);
+      document.getElementById('service-fee').textContent = formatRupiah(summary.service_fee);
+      document.getElementById('discount').textContent = '- ' + formatRupiah(promoDiscount);
+      document.getElementById('grand-total').textContent = formatRupiah(summary.grand_total - promoDiscount);
+    }
+
+    // Terapkan promo
+    async function applyPromo() {
+      const promoCode = document.getElementById('promo-code').value.trim();
+      if (!promoCode) return;
+      
+      try {
+        const response = await fetch(API_BASE_URL + 'promo.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ promo_code: promoCode })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          promoDiscount = data.discount_amount;
+          updatePriceSummary({
+            total_price: document.getElementById('total-price').textContent.replace(/\D/g, ''),
+            service_fee: document.getElementById('service-fee').textContent.replace(/\D/g, ''),
+            grand_total: document.getElementById('grand-total').textContent.replace(/\D/g, '')
+          });
+          alert('Promo applied successfully!');
+        } else {
+          alert(data.message);
+        }
+      } catch (error) {
+        alert('Failed to apply promo');
+        console.error('Error:', error);
+      }
+    }
+
+    // Proses pembayaran
+    async function processPayment() {
+      if (!selectedPaymentMethod) {
+        alert('Please select a payment method');
+        return;
+      }
+      
+      try {
+        const response = await fetch(API_BASE_URL + 'payment.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            payment_method: selectedPaymentMethod,
+            promo_code: document.getElementById('promo-code').value.trim() || null
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          window.location.href = `/concert/user/payment/confirmation.html?order_id=${data.order_id}`;
+        } else {
+          alert('Payment failed: ' + data.message);
+        }
+      } catch (error) {
+        alert('Payment processing error');
+        console.error('Error:', error);
+      }
+    }
+
+    // Fungsi untuk menampilkan error
+    function showError(message) {
+      document.getElementById('cart-items-container').innerHTML = `
+        <div class="alert alert-danger">${message}</div>
+      `;
+    }
+
+    // Inisialisasi saat halaman dimuat
+    document.addEventListener('DOMContentLoaded', function() {
+      loadCart();
+      
+      // Fungsi untuk payment method (sama seperti sebelumnya)
+      window.showPaymentMethod = function(method) {
+        document.getElementById('payment-placeholder').style.display = 'none';
+        document.querySelectorAll('.payment-options-container').forEach(el => {
+          el.style.display = 'none';
+        });
+        document.getElementById(`${method}-options`).style.display = 'block';
+        
+        document.querySelectorAll('.payment-method-tab').forEach(tab => {
+          tab.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        selectedPaymentMethod = null;
+        document.querySelectorAll('.payment-option').forEach(option => {
+          option.classList.remove('active');
+        });
+      };
+      
+      window.selectPaymentMethod = function(method) {
+        selectedPaymentMethod = method;
+        document.querySelectorAll('.payment-option').forEach(option => {
+          option.classList.remove('active');
+        });
+        event.currentTarget.classList.add('active');
+      };
     });
   </script>
 </body>
